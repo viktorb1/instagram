@@ -13,13 +13,19 @@
     const {username: profileUsername} = route.params
     
 
-    const props = defineProps(['user', 'userInfo', 'addNewPost', 'isFollowing'])
+    const props = defineProps(['user', 'userInfo', 'addNewPost', 'isFollowing', 'updateIsFollowing'])
 
     const followUser = async () => {
+        props.updateIsFollowing(true)
         await supabase.from("followers_following").insert({
             follower_id: user.value.id,
             following_id: props.user.id
         })
+    }
+
+    const unfollowUser = async () => {
+        props.updateIsFollowing(false)
+        await supabase.from("followers_following").delete().eq("follower_id", user.value.id).eq("following_id", props.user.id)
     }
 </script>
 
@@ -31,7 +37,7 @@
                 <UploadPhotoModal :addNewPost="addNewPost" v-if="user.username == profileUsername"/>
                 <div v-else>
                     <a-button v-if="!props.isFollowing" @click="followUser">Follow</a-button>
-                    <a-button v-else>Following</a-button>
+                    <a-button v-else @click="unfollowUser">Following</a-button>
                 </div>
             </div>
             

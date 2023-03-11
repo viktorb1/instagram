@@ -2,7 +2,7 @@
 import Container from "@/components/Container.vue"
 import UserBar from "@/components/UserBar.vue"
 import ImageGallery from "./ImageGallery.vue";
-import {ref, onMounted, watch} from "vue"
+import {ref, onMounted, watch, reactive} from "vue"
 import {supabase} from "../supabase"
 import { useRoute } from "vue-router";
 import { useUsersStore } from "../stores/users";
@@ -16,7 +16,7 @@ const loading = ref(false)
 const isFollowing = ref(false)
 const userStore = useUsersStore()
 const {user: loggedInUser} = storeToRefs(userStore)
-
+const userInfo = reactive({posts: null, followers: null, following: null})
 
 const addNewPost = (post) => {
     posts.value.unshift(post)
@@ -36,8 +36,17 @@ const fetchData = async () => {
     const {data: postsData} = await supabase.from("posts").select().eq("owner_id", user.value.id)
     posts.value = postsData
     await fetchIsFollowing()
-    loading.value = false
+    const followerCount = await fetchFollowersCount()
+    const followingCount = await fetchFollowingCount()
+    userInfo.followers = followerCount
+    userInfo.following = followingCount
+    userInfo.posts = posts.value.length
 
+    loading.value = false
+}
+
+const updateIsFollowing = (follow) => {
+    isFollowing.value = follow
 }
 
 const fetchIsFollowing = async () => {
@@ -46,6 +55,16 @@ const fetchIsFollowing = async () => {
         if (data)
             isFollowing.value = true
     }
+}
+
+const fetchFollowersCount = async () => {
+    const {count} = await supabase.from("followers_following").select("*", {count: 'exact'}).eq("following_id", user.value.id)
+    return count
+}
+
+const fetchFollowingCount = async () => {
+    const {count} = await supabase.from("followers_following").select("*", {count: 'exact'}).eq("follower_id", user.value.id)
+    return count
 }
 
 watch(loggedInUser, async () => {
@@ -60,7 +79,7 @@ onMounted(() => {
 <template>
     <Container>
         <div class="profile-container" v-if="!loading">
-            <UserBar :isFollowing="isFollowing" :user="user" :key="$route.params.username" :addNewPost="addNewPost" :userInfo="{posts: 4, followers: 100, following: 342 }"/>
+            <UserBar :updateIsFollowing="updateIsFollowing" :isFollowing="isFollowing" :user="user" :key="$route.params.username" :addNewPost="addNewPost" :userInfo="userInfo"/>
             <ImageGallery :posts="posts"></ImageGallery>
         </div>
         <div class="spinner" v-else>
