@@ -4,6 +4,7 @@
     import {useRoute} from "vue-router"
     import {useUsersStore} from "../stores/users"
     import { storeToRefs } from "pinia";
+    import { supabase } from "../supabase";
 
     const route = useRoute()
     const userStore = useUsersStore()
@@ -12,14 +13,28 @@
     const {username: profileUsername} = route.params
     
 
-    const props = defineProps(['user', 'userInfo', 'addNewPost'])
+    const props = defineProps(['user', 'userInfo', 'addNewPost', 'isFollowing'])
+
+    const followUser = async () => {
+        await supabase.from("followers_following").insert({
+            follower_id: user.value.id,
+            following_id: props.user.id
+        })
+    }
 </script>
 
 <template>
     <div class="userbar-container" v-if="props.user">
         <div class="top-content">
             <a-typography-title :level="2">{{ props.user.username }}</a-typography-title>
-            <UploadPhotoModal :addNewPost="addNewPost" v-if="user && user.username == profileUsername"/>
+            <div v-if="user">
+                <UploadPhotoModal :addNewPost="addNewPost" v-if="user.username == profileUsername"/>
+                <div v-else>
+                    <a-button v-if="!props.isFollowing" @click="followUser">Follow</a-button>
+                    <a-button v-else>Following</a-button>
+                </div>
+            </div>
+            
         </div>
         <div class="bottom-content">
             <a-typography-title :level="5">{{ props.userInfo.posts }} posts</a-typography-title>

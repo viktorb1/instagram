@@ -2,15 +2,21 @@
 import Container from "@/components/Container.vue"
 import UserBar from "@/components/UserBar.vue"
 import ImageGallery from "./ImageGallery.vue";
-import {ref, onMounted} from "vue"
+import {ref, onMounted, watch} from "vue"
 import {supabase} from "../supabase"
 import { useRoute } from "vue-router";
+import { useUsersStore } from "../stores/users";
+import { storeToRefs } from "pinia";
 
 const route = useRoute()
 const {username} = route.params
 const posts = ref([])
 const user = ref(null)
 const loading = ref(false)
+const isFollowing = ref(false)
+const userStore = useUsersStore()
+const {user: loggedInUser} = storeToRefs(userStore)
+
 
 const addNewPost = (post) => {
     posts.value.unshift(post)
@@ -29,9 +35,22 @@ const fetchData = async () => {
 
     const {data: postsData} = await supabase.from("posts").select().eq("owner_id", user.value.id)
     posts.value = postsData
+    await fetchIsFollowing()
     loading.value = false
 
 }
+
+const fetchIsFollowing = async () => {
+    if (loggedInUser.value && (loggedInUser.value.id != user.value.id)) {
+        const {data} = await supabase.from("followers_following").select().eq("follower_id", loggedInUser.value.id).eq("following_id", user.value.id).single()
+        if (data)
+            isFollowing.value = true
+    }
+}
+
+watch(loggedInUser, async () => {
+    await fetchIsFollowing()
+})
 
 onMounted(() => {
     fetchData()
@@ -41,7 +60,7 @@ onMounted(() => {
 <template>
     <Container>
         <div class="profile-container" v-if="!loading">
-            <UserBar :user="user" :key="$route.params.username" :addNewPost="addNewPost" :userInfo="{posts: 4, followers: 100, following: 342 }"/>
+            <UserBar :isFollowing="isFollowing" :user="user" :key="$route.params.username" :addNewPost="addNewPost" :userInfo="{posts: 4, followers: 100, following: 342 }"/>
             <ImageGallery :posts="posts"></ImageGallery>
         </div>
         <div class="spinner" v-else>
