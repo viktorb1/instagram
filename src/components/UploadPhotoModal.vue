@@ -2,11 +2,14 @@
 import { defineComponent, ref } from 'vue';
 import {supabase} from "../supabase"
 import { useUsersStore } from '../stores/users';
+import { storeToRefs } from 'pinia';
 
 const visible = ref(false);
 const caption = ref("")
 const file = ref(null)
 const userStore = useUsersStore()
+
+const {user} = storeToRefs(userStore)
 
 const showModal = () => {
     visible.value = true;
@@ -20,6 +23,7 @@ const handleOk = async (e) => {
             await supabase.from("posts").insert({
                 url: data.path,
                 caption: caption.value,
+                owner_id: user.value.id
 
             })
         }
