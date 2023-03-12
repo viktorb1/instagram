@@ -1,5 +1,6 @@
 <script setup>
     import {defineProps} from "vue"
+    const envs = import.meta.env
 
     const props = defineProps(['posts'])
 
@@ -9,7 +10,7 @@
         <img 
         v-for="post in props.posts" 
         :key="post.id"
-        :src="`https://gjtqpotrvjnnqavogfll.supabase.co/storage/v1/object/public/images/${post.url}`"
+        :src="`${envs.VITE_BASE_PHOTO_URL}${post.url}`"
         >
     </div>
 </template>

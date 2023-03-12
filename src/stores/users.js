@@ -99,7 +99,6 @@ export const useUsersStore = defineStore('counter', () => {
     const { data: newUser }  = await supabase
       .from("users").select().eq('email', email).single()
 
-    console.log(newUser)
     loading.value = false
 
     user.value = {
